@@ -1,306 +1,1972 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth" x-data="{
-  darkMode: true,
-  sidebarOpen: true,
-  selectedPlayer: null,
-  openModal: false,
-  attendanceData: [92, 95, 88, 100, 94, 97, 93],
-  radarData: {
-    labels: ['Speed', 'Shooting', 'Passing', 'Dribbling', 'Defending', 'Stamina'],
-    values: [85, 92, 78, 88, 65, 94]
-  }
-}" :class="{ 'dark': darkMode }">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ultra Squad — Modern Soccer Hub 2026</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            'pitch': '#065f46',      // deeper pitch green
-            'goal': '#059669',       // rich emerald
-            'card': '#0f172a',
-            'accent': '#7c3aed',     // vibrant violet-indigo
-            'accent-dark': '#6d28d9',
-          }
-        }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultra Squad Nexus — Soccer Management Hub 2026</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-secondary: rgba(15, 23, 42, 0.72);
+      --panel: rgba(15, 23, 42, 0.88);
+      --panel-soft: rgba(30, 41, 59, 0.62);
+      --border: rgba(148, 163, 184, 0.18);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #8b5cf6;
+      --accent-soft: rgba(139, 92, 246, 0.18);
+      --goal: #10b981;
+      --goal-soft: rgba(16, 185, 129, 0.18);
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+      --hero: radial-gradient(circle at top right, rgba(139, 92, 246, 0.32), transparent 42%), radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.26), transparent 35%), #07111f;
+      --input: rgba(15, 23, 42, 0.78);
+    }
+
+    body.light {
+      --bg: #eef4ff;
+      --bg-secondary: rgba(255, 255, 255, 0.85);
+      --panel: rgba(255, 255, 255, 0.95);
+      --panel-soft: rgba(241, 245, 249, 0.95);
+      --border: rgba(100, 116, 139, 0.2);
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #7c3aed;
+      --accent-soft: rgba(124, 58, 237, 0.12);
+      --goal: #059669;
+      --goal-soft: rgba(5, 150, 105, 0.12);
+      --warn: #d97706;
+      --danger: #dc2626;
+      --shadow: 0 20px 45px rgba(148, 163, 184, 0.22);
+      --hero: radial-gradient(circle at top right, rgba(124, 58, 237, 0.14), transparent 42%), radial-gradient(circle at bottom left, rgba(5, 150, 105, 0.14), transparent 35%), #eef4ff;
+      --input: rgba(255, 255, 255, 0.92);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--hero);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 292px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 1.5rem;
+      border-right: 1px solid var(--border);
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(28px);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    body.light .sidebar {
+      background: rgba(248, 250, 252, 0.84);
+    }
+
+    .brand,
+    .topbar,
+    .profile-chip,
+    .card,
+    .panel,
+    .status-card,
+    .timeline-item,
+    .modal-content,
+    .chart-card,
+    .player-card,
+    .composer,
+    .sync-card {
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: var(--panel);
+    }
+
+    .brand {
+      border-radius: 1.5rem;
+      padding: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .brand-badge,
+    .avatar {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 1rem;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10b981, #0f766e);
+    }
+
+    .brand small,
+    .eyebrow,
+    .label,
+    .muted,
+    .timeline-meta,
+    .status-meta,
+    .footer-note {
+      color: var(--muted);
+    }
+
+    .sidebar-nav {
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .nav-link {
+      border-radius: 1rem;
+      padding: 0.95rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      transition: 0.2s ease;
+      color: var(--muted);
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--text);
+      background: linear-gradient(135deg, var(--accent-soft), rgba(16, 185, 129, 0.12));
+    }
+
+    .icon-pill {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.9rem;
+      display: grid;
+      place-items: center;
+      background: rgba(148, 163, 184, 0.1);
+      font-size: 0.95rem;
+    }
+
+    .status-card,
+    .sync-card {
+      border-radius: 1.5rem;
+      padding: 1.15rem;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.74));
+    }
+
+    body.light .status-card,
+    body.light .sync-card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98));
+    }
+
+    .status-badge,
+    .tiny-badge,
+    .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .badge-success {
+      color: #a7f3d0;
+      background: rgba(16, 185, 129, 0.16);
+    }
+
+    .badge-warning {
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.15);
+    }
+
+    .badge-accent {
+      color: #ddd6fe;
+      background: rgba(139, 92, 246, 0.16);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .toggle-button,
+    .ghost-button,
+    .primary-button,
+    .secondary-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.9rem 1.15rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+    }
+
+    .toggle-button:hover,
+    .ghost-button:hover,
+    .primary-button:hover,
+    .secondary-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .toggle-button,
+    .ghost-button {
+      color: var(--text);
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+    }
+
+    .primary-button {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #6d28d9);
+      box-shadow: 0 18px 40px rgba(124, 58, 237, 0.3);
+    }
+
+    .secondary-button {
+      color: #042f2e;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      box-shadow: 0 18px 40px rgba(16, 185, 129, 0.28);
+    }
+
+    .content {
+      padding: 1.5rem;
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .topbar {
+      border-radius: 1.5rem;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 20;
+      backdrop-filter: blur(28px);
+    }
+
+    .search-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-radius: 999px;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--input);
+    }
+
+    .search-wrap input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .notification {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .notification-count {
+      position: absolute;
+      top: -0.15rem;
+      right: -0.15rem;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      padding: 0 0.2rem;
+      border-radius: 999px;
+      background: var(--danger);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .profile-chip {
+      border-radius: 999px;
+      padding: 0.45rem 0.8rem 0.45rem 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hero {
+      padding: 2rem;
+      border-radius: 2rem;
+      border: 1px solid rgba(139, 92, 246, 0.18);
+      background:
+        radial-gradient(circle at top right, rgba(34, 211, 238, 0.2), transparent 26%),
+        radial-gradient(circle at left, rgba(139, 92, 246, 0.24), transparent 22%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.78));
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    body.light .hero {
+      background:
+        radial-gradient(circle at top right, rgba(34, 211, 238, 0.16), transparent 26%),
+        radial-gradient(circle at left, rgba(139, 92, 246, 0.16), transparent 22%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98));
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 4.4vw, 4rem);
+      line-height: 1.04;
+      margin: 0.4rem 0 0;
+      max-width: 14ch;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #10b981, #67e8f9, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-copy {
+      max-width: 38rem;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: flex-start;
+    }
+
+    .grid,
+    .two-column,
+    .three-column {
+      display: grid;
+      gap: 1.15rem;
+    }
+
+    .grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .two-column {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
+    }
+
+    .three-column {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card,
+    .panel,
+    .composer,
+    .chart-card {
+      border-radius: 1.7rem;
+      padding: 1.25rem;
+    }
+
+    .card h3,
+    .panel h3,
+    .composer h3,
+    .chart-card h3,
+    .modal-content h3 {
+      margin: 0;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 0.35rem;
+    }
+
+    .metric-note {
+      margin-top: 0.7rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .positive {
+      color: #34d399;
+    }
+
+    .chart-bars {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 0.8rem;
+      min-height: 18rem;
+      margin-top: 1.5rem;
+    }
+
+    .chart-bar-wrap {
+      flex: 1;
+      display: grid;
+      justify-items: center;
+      gap: 0.6rem;
+    }
+
+    .chart-bar {
+      width: min(58px, 100%);
+      min-width: 38px;
+      border-radius: 1rem 1rem 0.65rem 0.65rem;
+      background: linear-gradient(180deg, rgba(139, 92, 246, 0.92), rgba(16, 185, 129, 0.85));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-bar::after {
+      content: attr(data-value);
+      position: absolute;
+      top: 0.6rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .chart-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .scroll-list {
+      display: grid;
+      gap: 0.85rem;
+      max-height: 30rem;
+      overflow: auto;
+      padding-right: 0.15rem;
+    }
+
+    .player-card,
+    .timeline-item {
+      border-radius: 1.45rem;
+      padding: 1rem;
+    }
+
+    .player-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .player-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(139, 92, 246, 0.28);
+    }
+
+    .player-art {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 1.15rem;
+      background: var(--gradient);
+      box-shadow: 0 16px 28px rgba(15, 23, 42, 0.32);
+    }
+
+    .spotlight {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.15rem;
+      align-items: start;
+    }
+
+    .spotlight-art {
+      width: 7rem;
+      height: 7rem;
+      border-radius: 1.7rem;
+      background: var(--gradient);
+      box-shadow: 0 20px 36px rgba(15, 23, 42, 0.35);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .mini-stat,
+    .wellness-item,
+    .skill-row,
+    .detail-card {
+      border-radius: 1.25rem;
+      padding: 0.95rem;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.95rem;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 0.45rem 0.8rem;
+      background: var(--accent-soft);
+      color: #ddd6fe;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .wellness-list,
+    .timeline-list,
+    .sync-preview {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .signal-strong {
+      color: #a7f3d0;
+    }
+
+    .signal-monitor {
+      color: #fde68a;
+    }
+
+    .signal-action {
+      color: #fecaca;
+    }
+
+    .timeline-item-header,
+    .panel-header,
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .field-row input,
+    .field-row select,
+    .field-row textarea {
+      border-radius: 1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      outline: none;
+      resize: vertical;
+    }
+
+    .field-row input:focus,
+    .field-row select:focus,
+    .field-row textarea:focus {
+      border-color: rgba(139, 92, 246, 0.6);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+    }
+
+    .composer-actions,
+    .sync-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .skill-bars {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .skill-progress {
+      margin-top: 0.55rem;
+      height: 0.7rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(148, 163, 184, 0.16);
+    }
+
+    .skill-progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(135deg, #10b981, #8b5cf6);
+    }
+
+    .sync-preview-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: var(--muted);
+    }
+
+    .sync-check {
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #10b981, #059669);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .footer-note {
+      text-align: center;
+      padding: 1rem 0 2rem;
+      font-size: 0.92rem;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 50;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-content {
+      width: min(980px, 100%);
+      border-radius: 2rem;
+      padding: 1.35rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .modal-header,
+    .modal-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .modal-grid {
+      grid-template-columns: 0.95fr 1.05fr;
+    }
+
+    .close-button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .close-button:hover {
+      color: var(--text);
+    }
+
+    .hidden-mobile {
+      display: block;
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    @media (max-width: 1120px) {
+      .grid,
+      .three-column {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .two-column,
+      .modal-grid {
+        grid-template-columns: 1fr;
       }
     }
-  </script>
+
+    @media (max-width: 940px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: min(86vw, 292px);
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 35;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .menu-toggle {
+        display: grid;
+        place-items: center;
+      }
+
+      .hidden-mobile {
+        display: none;
+      }
+
+      .topbar {
+        top: 0.75rem;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .content {
+        padding: 1rem;
+      }
+
+      .hero,
+      .card,
+      .panel,
+      .composer,
+      .chart-card,
+      .modal-content,
+      .brand,
+      .topbar,
+      .status-card,
+      .sync-card,
+      .timeline-item,
+      .player-card {
+        border-radius: 1.3rem;
+      }
+
+      .grid,
+      .three-column,
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .player-card,
+      .spotlight {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-wrap: wrap;
+      }
+
+      .search-wrap {
+        order: 2;
+        width: 100%;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 text-gray-100 min-h-screen font-sans antialiased selection:bg-violet-600 selection:text-white">
-
-  <!-- Sidebar -->
-  <aside 
-    x-show="sidebarOpen"
-    class="fixed inset-y-0 left-0 z-50 w-72 bg-gray-900/70 backdrop-blur-2xl border-r border-gray-800/60 transform transition-all duration-300 lg:translate-x-0 shadow-2xl"
-    :class="{ '-translate-x-full': !sidebarOpen }"
-  >
-    <div class="flex items-center justify-between p-6 border-b border-gray-800/60">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-goal to-pitch flex items-center justify-center text-white font-bold text-xl shadow-lg">US</div>
-        <h1 class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-accent to-purple-400 bg-clip-text text-transparent">Ultra Squad</h1>
-      </div>
-      <button @click="sidebarOpen = false" class="lg:hidden text-gray-400 hover:text-white">
-        <i class="fas fa-times text-2xl"></i>
-      </button>
-    </div>
-
-    <nav class="p-4 space-y-1.5">
-      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent/20 to-purple-600/10 text-accent font-medium shadow-sm">
-        <i class="fas fa-tachometer-alt w-6"></i> Dashboard
-      </a>
-      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800/60 transition">
-        <i class="fas fa-users w-6"></i> Squad
-      </a>
-      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800/60 transition">
-        <i class="fas fa-calendar-alt w-6"></i> Fixtures
-      </a>
-      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800/60 transition">
-        <i class="fas fa-check-double w-6"></i> Attendance
-      </a>
-      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800/60 transition">
-        <i class="fas fa-dumbbell w-6"></i> Training
-      </a>
-      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800/60 transition">
-        <i class="fas fa-wallet w-6"></i> Finances
-      </a>
-    </nav>
-
-    <div class="absolute bottom-8 left-6 right-6">
-      <button @click="darkMode = !darkMode" class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gray-800/60 hover:bg-gray-700/60 transition backdrop-blur-sm">
-        <i x-show="!darkMode" class="fas fa-moon"></i>
-        <i x-show="darkMode" class="fas fa-sun"></i>
-        <span x-text="darkMode ? 'Light Mode' : 'Dark Mode'"></span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="lg:ml-72 min-h-screen transition-all duration-300">
-    <header class="sticky top-0 z-40 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/60">
-      <div class="flex items-center justify-between px-6 py-4">
-        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-2xl text-gray-400 hover:text-white">
-          <i class="fas fa-bars"></i>
-        </button>
-
-        <div class="flex-1 max-w-xl mx-8 hidden md:block">
-          <div class="relative">
-            <input type="text" placeholder="Search players, fixtures..." class="w-full bg-gray-800/60 border border-gray-700 rounded-full py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-accent transition backdrop-blur-sm">
-            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-5">
-          <button class="relative">
-            <i class="fas fa-bell text-xl text-gray-400 hover:text-accent transition"></i>
-            <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center">2</span>
-          </button>
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-accent flex items-center justify-center text-white font-bold shadow-lg">G</div>
-            <div class="hidden sm:block">
-              <p class="font-medium">Goodness</p>
-              <p class="text-xs text-gray-500">Head Coach • U-17</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <div class="p-6 lg:p-10 space-y-10">
-      <!-- Header -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-badge">US</div>
         <div>
-          <h2 class="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-goal to-pitch bg-clip-text text-transparent">Dashboard</h2>
-          <p class="text-gray-400 mt-1.5">U-17 Academy • Johannesburg • March 09, 2026</p>
-        </div>
-        <div class="flex flex-wrap gap-4">
-          <button class="px-6 py-3 bg-gradient-to-r from-accent to-purple-600 rounded-full font-medium hover:shadow-xl hover:shadow-accent/30 transition transform hover:-translate-y-0.5">
-            <i class="fas fa-plus mr-2"></i>New Fixture
-          </button>
+          <div style="font-size:1.3rem;font-weight:800;">Ultra Squad</div>
+          <small>Nexus hub</small>
         </div>
       </div>
 
-      <!-- KPI Cards with stronger glassmorphism -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gray-900/50 backdrop-blur-2xl border border-gray-700/40 rounded-2xl p-6 hover:border-goal/60 transition group hover:shadow-2xl hover:shadow-goal/10 hover:-translate-y-1">
-          <p class="text-sm text-gray-400">Active Players</p>
-          <p class="text-3xl font-bold mt-1">28</p>
-          <p class="text-sm mt-4"><span class="text-goal">+3</span> this month</p>
+      <nav class="sidebar-nav">
+        <a class="nav-link active" href="#dashboard"><span class="icon-pill">⚽</span>Dashboard</a>
+        <a class="nav-link" href="#profiles"><span class="icon-pill">🪪</span>Player Profiles</a>
+        <a class="nav-link" href="#parents"><span class="icon-pill">🤝</span>Parent Hub</a>
+        <a class="nav-link" href="#wellness"><span class="icon-pill">🫀</span>Wellness Pulse</a>
+        <a class="nav-link" href="#firebase"><span class="icon-pill">☁️</span>Firebase Sync</a>
+      </nav>
+
+      <section class="status-card">
+        <div class="panel-header">
+          <div>
+            <div class="eyebrow">LIVE STATUS</div>
+            <h3 style="margin-top:0.45rem;">Family engagement</h3>
+          </div>
+          <span class="status-badge badge-success" id="reply-rate-badge">92% replied</span>
         </div>
-        <div class="bg-gray-900/50 backdrop-blur-2xl border border-gray-700/40 rounded-2xl p-6 hover:border-accent/60 transition group hover:shadow-2xl hover:shadow-accent/10 hover:-translate-y-1">
-          <p class="text-sm text-gray-400">Next Fixture</p>
-          <p class="text-3xl font-bold mt-1">Tomorrow</p>
-          <p class="text-sm mt-4 text-gray-300">15:30 • vs Pretoria Utd</p>
-        </div>
-        <div class="bg-gray-900/50 backdrop-blur-2xl border border-gray-700/40 rounded-2xl p-6 hover:border-emerald-500/60 transition group hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1">
-          <p class="text-sm text-gray-400">Attendance</p>
-          <p class="text-3xl font-bold mt-1">94.2%</p>
-          <p class="text-sm mt-4"><span class="text-red-400">-1.1%</span> vs last week</p>
-        </div>
-        <div class="bg-gray-900/50 backdrop-blur-2xl border border-gray-700/40 rounded-2xl p-6 hover:border-pink-500/60 transition group hover:shadow-2xl hover:shadow-pink-500/10 hover:-translate-y-1">
-          <p class="text-sm text-gray-400">Pending Fees</p>
-          <p class="text-3xl font-bold mt-1">R 8,450</p>
-          <p class="text-sm mt-4">7 overdue</p>
-        </div>
+        <p class="muted" style="margin:0.9rem 0 0;">Coaches, players, and parents share one frictionless view of readiness, communication, and next actions.</p>
+      </section>
+
+      <div class="sidebar-footer">
+        <button class="toggle-button" id="theme-toggle">☀️ Light Mode</button>
+        <section class="sync-card">
+          <div class="panel-header">
+            <strong>Firebase</strong>
+            <span class="tiny-badge badge-warning" id="firebase-pill">Demo mode</span>
+          </div>
+          <p class="status-meta" id="firebase-sidebar-status" style="margin:0.75rem 0 0;">Demo mode active. Add Firebase settings to enable Auth + Firestore sync.</p>
+        </section>
       </div>
+    </aside>
 
-      <!-- Charts Section -->
-      <div class="grid lg:grid-cols-2 gap-8">
-        <!-- Attendance Trend -->
-        <div class="bg-gray-900/50 backdrop-blur-2xl border border-gray-700/40 rounded-2xl p-6">
-          <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
-            <i class="fas fa-chart-line text-goal"></i> Attendance Trend (Last 7 Sessions)
-          </h3>
-          <canvas id="attendanceChart" class="w-full h-64"></canvas>
-        </div>
+    <main class="content">
+      <header class="topbar">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button>
 
-        <!-- Squad Overview -->
-        <div class="bg-gray-900/50 backdrop-blur-2xl border border-gray-700/40 rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold">Key Players</h3>
-            <button class="text-accent hover:text-accent-dark text-sm font-medium">View Full Squad →</button>
+        <label class="search-wrap" for="search-input">
+          <span aria-hidden="true">🔎</span>
+          <input id="search-input" type="text" aria-label="Search players, parents, and wellness goals" placeholder="Search players, parents, wellness goals..." />
+        </label>
+
+        <div class="topbar-actions">
+          <div class="notification">
+            🔔
+            <span class="notification-count" id="urgent-alerts-count">2</span>
           </div>
-          <div class="space-y-4">
-            <div @click="selectedPlayer = {name:'Thabo Mokoena', position:'Striker', number:9, age:17, attendance:95, photoGradient:'from-blue-500 to-cyan-600'}; openModal=true" class="flex items-center gap-4 p-4 bg-gray-800/40 rounded-xl hover:bg-gray-700/50 transition cursor-pointer group">
-              <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex-shrink-0 shadow-md group-hover:scale-105 transition"></div>
-              <div class="flex-1">
-                <p class="font-medium">Thabo Mokoena</p>
-                <p class="text-sm text-gray-400">Striker • #9 • 17y</p>
-              </div>
-              <span class="text-goal text-sm font-medium">95%</span>
-            </div>
-            <div @click="selectedPlayer = {name:'Lerato Nkosi', position:'Midfielder', number:6, age:16, attendance:92, photoGradient:'from-purple-500 to-pink-600'}; openModal=true" class="flex items-center gap-4 p-4 bg-gray-800/40 rounded-xl hover:bg-gray-700/50 transition cursor-pointer group">
-              <div class="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex-shrink-0 shadow-md group-hover:scale-105 transition"></div>
-              <div class="flex-1">
-                <p class="font-medium">Lerato Nkosi</p>
-                <p class="text-sm text-gray-400">Midfielder • #6 • 16y</p>
-              </div>
-              <span class="text-goal text-sm font-medium">92%</span>
+          <div class="profile-chip">
+            <div class="avatar">G</div>
+            <div class="hidden-mobile">
+              <div style="font-weight:700;">Goodness</div>
+              <div class="muted" style="font-size:0.82rem;">Head Coach • U-17</div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <!-- Player Detail Modal -->
-      <div x-show="openModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" @click.away="openModal=false">
-        <div @click.stop class="bg-gray-900/80 backdrop-blur-2xl border border-gray-700/50 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all scale-100" x-transition>
-          <div class="p-6 border-b border-gray-700/50 flex justify-between items-center">
-            <h3 class="text-2xl font-bold">Player Profile</h3>
-            <button @click="openModal=false" class="text-gray-400 hover:text-white">
-              <i class="fas fa-times text-xl"></i>
-            </button>
-          </div>
-          <div class="p-6 space-y-6">
-            <div class="flex items-center gap-6">
-              <div :class="`w-24 h-24 rounded-2xl bg-gradient-to-br ${selectedPlayer?.photoGradient} shadow-xl`"></div>
-              <div>
-                <h4 class="text-2xl font-bold" x-text="selectedPlayer?.name"></h4>
-                <p class="text-gray-300" x-text="selectedPlayer?.position + ' • #' + selectedPlayer?.number"></p>
-                <p class="text-sm text-gray-400">Age: " + selectedPlayer?.age + " • Attendance: " + selectedPlayer?.attendance + "%"</p>
-              </div>
-            </div>
+      <section class="hero" id="dashboard">
+        <div>
+          <div class="eyebrow">AVANT-GARDE COACHING WORKSPACE</div>
+          <h1 class="hero-title gradient-text">Cutting-edge soccer management for the full family ecosystem.</h1>
+          <p class="hero-copy">Track athlete growth, keep parents in the loop, surface wellness risks early, and sync your academy data into Firebase from one refined dashboard.</p>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" id="open-selected-player">Open player studio</button>
+          <button class="secondary-button" id="sync-now">Sync academy hub</button>
+        </div>
+      </section>
 
+      <section class="grid" id="metrics-grid">
+        <article class="card">
+          <div class="eyebrow">ACTIVE PLAYERS</div>
+          <div class="metric-value" id="active-players">3</div>
+          <div class="metric-note"><span class="positive">+2</span> new player journeys added</div>
+        </article>
+        <article class="card">
+          <div class="eyebrow">PARENT RESPONSE RATE</div>
+          <div class="metric-value" id="parent-reply-rate">92%</div>
+          <div class="metric-note">4 families engaged within the last 24h</div>
+        </article>
+        <article class="card">
+          <div class="eyebrow">SQUAD ATTENDANCE</div>
+          <div class="metric-value" id="attendance-average">94.2%</div>
+          <div class="metric-note"><span class="positive">+2.8%</span> from previous micro-cycle</div>
+        </article>
+        <article class="card">
+          <div class="eyebrow">FIREBASE CLOUD SYNC</div>
+          <div class="metric-value" id="firebase-state">Ready</div>
+          <div class="metric-note" id="firebase-last-sync-note">Connect and sync with Firestore</div>
+        </article>
+      </section>
+
+      <section class="two-column">
+        <article class="chart-card">
+          <div class="card-header">
             <div>
-              <h5 class="text-lg font-semibold mb-3 flex items-center gap-2">
-                <i class="fas fa-chart-radar text-accent"></i> Performance Radar
-              </h5>
-              <canvas id="playerRadar" class="w-full h-64"></canvas>
+              <div class="eyebrow">ATTENDANCE MOMENTUM</div>
+              <h3 style="margin-top:0.45rem;">Last 7 sessions</h3>
             </div>
+            <span class="metric-badge badge-accent">Live trend</span>
+          </div>
+          <div class="chart-bars" id="attendance-chart"></div>
+        </article>
 
-            <div class="pt-4 border-t border-gray-700/50">
-              <button class="w-full py-3 bg-gradient-to-r from-accent to-purple-600 rounded-xl font-medium hover:shadow-xl hover:shadow-accent/30 transition">
-                Edit Profile / Add Notes
-              </button>
+        <article class="panel" id="profiles">
+          <div class="card-header">
+            <div>
+              <div class="eyebrow">PLAYER PROFILE STUDIO</div>
+              <h3 style="margin-top:0.45rem;">Smart roster cards</h3>
+            </div>
+            <span class="metric-badge badge-accent" id="visible-count">3 visible</span>
+          </div>
+          <div class="scroll-list" id="player-list"></div>
+        </article>
+      </section>
+
+      <section class="two-column">
+        <article class="panel">
+          <div class="card-header">
+            <div>
+              <div class="eyebrow">SELECTED PLAYER</div>
+              <h3 style="margin-top:0.45rem;" id="selected-player-name">Thabo Mokoena</h3>
+            </div>
+            <button class="ghost-button" id="view-full-profile">View full profile</button>
+          </div>
+
+          <div class="spotlight" style="margin-top:1.2rem;">
+            <div class="spotlight-art" id="selected-player-art"></div>
+            <div>
+              <div class="stats-grid" id="selected-stats"></div>
+              <div class="detail-card" style="margin-top:0.95rem;">
+                <strong>Development focus</strong>
+                <p class="muted" id="selected-player-story" style="margin:0.7rem 0 0;"></p>
+                <div class="tags" id="selected-player-tags"></div>
+              </div>
             </div>
           </div>
+        </article>
+
+        <article class="panel" id="wellness">
+          <div class="eyebrow">PIONEERING MODULE</div>
+          <h3 style="margin-top:0.45rem;">Wellness Pulse</h3>
+          <p class="muted" style="margin:0.7rem 0 0;">A coach-friendly readiness feed blending recovery, school load, and family context before training begins.</p>
+          <div class="wellness-list" id="wellness-list" style="margin-top:1rem;"></div>
+        </article>
+      </section>
+
+      <section class="two-column" id="parents">
+        <article class="panel">
+          <div class="card-header">
+            <div>
+              <div class="eyebrow">PARENT INTERACTION HUB</div>
+              <h3 style="margin-top:0.45rem;">Communication timeline</h3>
+            </div>
+            <span class="metric-badge badge-success" id="preferred-channel-badge">Preferred channel: WhatsApp</span>
+          </div>
+          <div class="timeline-list" id="interaction-list" style="margin-top:1rem;"></div>
+        </article>
+
+        <article class="composer">
+          <div class="eyebrow">FAMILY-READY COMPOSER</div>
+          <h3 style="margin-top:0.45rem;">Send an update</h3>
+          <div class="field-grid" style="margin-top:1rem;">
+            <label class="field-row">
+              <span class="label">Player</span>
+              <select id="message-player"></select>
+            </label>
+            <label class="field-row">
+              <span class="label">Subject</span>
+              <input id="message-subject" type="text" />
+            </label>
+            <label class="field-row">
+              <span class="label">Message</span>
+              <textarea id="message-body" rows="5"></textarea>
+            </label>
+          </div>
+          <div class="composer-actions" style="margin-top:1rem;">
+            <button class="secondary-button" id="send-update">Send update</button>
+            <button class="ghost-button" id="queue-note">Add wellness note</button>
+          </div>
+          <p class="muted" id="ui-message" style="margin:1rem 0 0;">Compose a player or parent update and keep your family communication log in one place.</p>
+        </article>
+      </section>
+
+      <section class="two-column" id="firebase">
+        <article class="panel">
+          <div class="eyebrow">FIREBASE INTEGRATION</div>
+          <h3 style="margin-top:0.45rem;">Connect Auth + Firestore</h3>
+          <p class="muted" style="margin:0.7rem 0 0;">Paste your Firebase web app settings to enable anonymous coach sign-in, cloud sync, and live academy records.</p>
+
+          <div class="field-grid" id="firebase-fields" style="margin-top:1rem;"></div>
+
+          <div class="sync-actions" style="margin-top:1rem;">
+            <button class="secondary-button" id="connect-firebase">Connect</button>
+            <button class="ghost-button" id="sign-in-firebase">Sign in anonymously</button>
+            <button class="ghost-button" id="load-firebase">Load cloud data</button>
+          </div>
+
+          <div class="detail-card" style="margin-top:1rem;">
+            <div class="card-header">
+              <strong>Connection status</strong>
+              <span class="metric-badge badge-warning" id="firebase-connection-badge">Awaiting config</span>
+            </div>
+            <p class="muted" id="firebase-status" style="margin:0.8rem 0 0;">Demo mode active. Add Firebase settings to enable Auth + Firestore sync.</p>
+            <p class="muted" id="firebase-user" style="margin:0.5rem 0 0;"></p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="card-header">
+            <div>
+              <div class="eyebrow">CLOUD-READY OVERVIEW</div>
+              <h3 style="margin-top:0.45rem;">What gets synced</h3>
+            </div>
+            <button class="primary-button" id="sync-overview-button">Sync now</button>
+          </div>
+
+          <div class="three-column" style="margin-top:1rem;">
+            <div class="detail-card">
+              <div class="label">Player profiles</div>
+              <div class="metric-value" id="synced-player-count" style="font-size:1.6rem;">3</div>
+            </div>
+            <div class="detail-card">
+              <div class="label">Parent interactions</div>
+              <div class="metric-value" id="synced-interaction-count" style="font-size:1.6rem;">3</div>
+            </div>
+            <div class="detail-card">
+              <div class="label">Firebase auth</div>
+              <div class="metric-value" id="firebase-auth-state" style="font-size:1.6rem;">Off</div>
+            </div>
+          </div>
+
+          <div class="detail-card" style="margin-top:1rem;">
+            <strong>Sync payload preview</strong>
+            <div class="sync-preview" style="margin-top:0.9rem;">
+              <div class="sync-preview-item"><span class="sync-check">✓</span>Rich player cards with readiness, wellness, goals, and parent contact</div>
+              <div class="sync-preview-item"><span class="sync-check">✓</span>Parent communication timeline and wellness notes</div>
+              <div class="sync-preview-item"><span class="sync-check">✓</span>Dashboard attendance trend and updated sync timestamp</div>
+            </div>
+          </div>
+
+          <div class="detail-card" style="margin-top:1rem;">
+            <div class="card-header">
+              <strong>Last activity</strong>
+              <span class="muted" id="firebase-log-time">Not yet synced</span>
+            </div>
+            <p class="muted" id="firebase-log" style="margin:0.8rem 0 0;">No cloud sync yet. Local dashboard data is ready to sync when Firebase is configured.</p>
+          </div>
+        </article>
+      </section>
+
+      <p class="footer-note">Enhanced soccer ecosystem • Player profiles • Parent interaction hub • Wellness pulse • Firebase-ready sync • Johannesburg Youth Soccer • 2026</p>
+    </main>
+  </div>
+
+  <div class="modal" id="player-modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="card-header">
+        <div>
+          <div class="eyebrow">PLAYER PROFILE</div>
+          <h3 style="margin-top:0.45rem;" id="modal-player-name">Thabo Mokoena</h3>
         </div>
+        <button class="close-button" id="close-modal" aria-label="Close">×</button>
       </div>
 
-      <!-- Footer note -->
-      <p class="text-center text-gray-600 text-sm pt-12">
-        Enhanced version • Chart.js + Alpine.js • Johannesburg Youth Soccer • 2026
-      </p>
+      <div class="modal-grid">
+        <section class="panel" style="margin:0;">
+          <div class="spotlight">
+            <div class="spotlight-art" id="modal-player-art"></div>
+            <div>
+              <strong id="modal-player-role">Striker • #9</strong>
+              <p class="muted" id="modal-player-meta" style="margin:0.45rem 0 0;">Age 17 • Attendance 95%</p>
+              <p class="muted" id="modal-parent-lead" style="margin:0.45rem 0 0;">Parent lead: Nomsa Mokoena</p>
+            </div>
+          </div>
+
+          <div class="three-column" style="margin-top:1rem;">
+            <div class="detail-card">
+              <div class="label">School</div>
+              <strong id="modal-school">Parktown High</strong>
+            </div>
+            <div class="detail-card">
+              <div class="label">Medical clearance</div>
+              <strong id="modal-medical">Cleared</strong>
+            </div>
+            <div class="detail-card">
+              <div class="label">Availability</div>
+              <strong id="modal-availability">Match ready</strong>
+            </div>
+          </div>
+
+          <div class="detail-card" style="margin-top:1rem;">
+            <strong>Parent interaction</strong>
+            <p class="muted" id="modal-parent-phone" style="margin:0.8rem 0 0;"></p>
+            <p class="muted" id="modal-parent-email" style="margin:0.35rem 0 0;"></p>
+            <p class="muted" id="modal-parent-channel" style="margin:0.6rem 0 0;"></p>
+          </div>
+        </section>
+
+        <section class="panel" style="margin:0;">
+          <div class="eyebrow">PERFORMANCE SNAPSHOT</div>
+          <h3 style="margin-top:0.45rem;">Skill radar translated into coach-ready bars</h3>
+          <div class="skill-bars" id="skill-bars" style="margin-top:1rem;"></div>
+
+          <div class="detail-card" style="margin-top:1rem;">
+            <strong>Coach notes</strong>
+            <p class="muted" id="modal-notes" style="margin:0.8rem 0 0;"></p>
+            <div class="button-row" style="margin-top:1rem;">
+              <button class="ghost-button" id="prepare-reminder">Prepare reminder</button>
+              <button class="ghost-button" id="log-recovery">Log recovery check-in</button>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
-  </main>
+  </div>
 
-  <!-- Chart Initialization -->
   <script>
-    document.addEventListener('alpine:init', () => {
-      // Attendance Line Chart
-      new Chart(document.getElementById('attendanceChart'), {
-        type: 'line',
-        data: {
-          labels: ['Mar 3', 'Mar 4', 'Mar 5', 'Mar 6', 'Mar 7', 'Mar 8', 'Mar 9'],
-          datasets: [{
-            label: 'Attendance %',
-            data: Alpine.store('attendanceData') || [92, 95, 88, 100, 94, 97, 93],
-            borderColor: '#059669',
-            backgroundColor: 'rgba(5, 150, 105, 0.2)',
-            tension: 0.4,
-            fill: true,
-            pointBackgroundColor: '#059669',
-            pointBorderColor: '#fff',
-            pointHoverRadius: 8,
-          }]
+    const firebaseBridge = {
+      app: null,
+      auth: null,
+      db: null,
+      modules: null,
+      async loadModules() {
+        if (this.modules) {
+          return this.modules;
+        }
+
+        const [appModule, authModule, firestoreModule] = await Promise.all([
+          import('https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js'),
+          import('https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js'),
+          import('https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js')
+        ]);
+
+        this.modules = { ...appModule, ...authModule, ...firestoreModule };
+        return this.modules;
+      },
+      async connect(config) {
+        const modules = await this.loadModules();
+        const existing = modules.getApps().find((app) =>
+          app.name === 'ultra-squad-web' &&
+          app.options?.projectId === config.projectId &&
+          app.options?.apiKey === config.apiKey &&
+          app.options?.authDomain === config.authDomain &&
+          app.options?.appId === config.appId
+        );
+        this.app = existing || modules.initializeApp(config, 'ultra-squad-web');
+        this.auth = modules.getAuth(this.app);
+        this.db = modules.getFirestore(this.app);
+        return this;
+      },
+      async signIn() {
+        const modules = await this.loadModules();
+        if (!this.auth) {
+          throw new Error('Connect Firebase before signing in.');
+        }
+        return modules.signInAnonymously(this.auth);
+      },
+      async syncDashboard(payload) {
+        const modules = await this.loadModules();
+        if (!this.db) {
+          throw new Error('Connect Firebase before syncing.');
+        }
+
+        await modules.setDoc(
+          modules.doc(this.db, 'dashboards', 'ultra-squad'),
+          { ...payload, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      },
+      async loadDashboard() {
+        const modules = await this.loadModules();
+        if (!this.db) {
+          throw new Error('Connect Firebase before loading.');
+        }
+
+        const snapshot = await modules.getDoc(modules.doc(this.db, 'dashboards', 'ultra-squad'));
+        return snapshot.exists() ? snapshot.data() : null;
+      }
+    };
+
+    const skillLabels = ['Speed', 'Shooting', 'Passing', 'Dribbling', 'Defending', 'Stamina'];
+    const MAX_VISIBLE_INTERACTIONS = 6;
+    const MAX_SUBJECT_LENGTH = 80;
+    const MAX_MESSAGE_LENGTH = 500;
+
+    const defaultPlayers = [
+      {
+        id: 1,
+        name: 'Thabo Mokoena',
+        position: 'Striker',
+        number: 9,
+        age: 17,
+        attendance: 95,
+        readiness: 91,
+        academics: 'A-',
+        wellnessRisk: 'Low',
+        availability: 'Match ready',
+        school: 'Parktown High',
+        medical: 'Cleared',
+        focus: 'Finishing',
+        story: 'Thabo is building sharper off-ball timing and responding well to individualized finishing video clips.',
+        goals: ['Back-post finishing', 'Pressing triggers', 'Leadership'],
+        notes: 'Strong energy this week. Parent requested regular study-plan alignment ahead of exams.',
+        gradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+        parent: {
+          name: 'Nomsa Mokoena',
+          phone: '+27 82 111 2016',
+          email: 'nomsa.mokoena@example.com',
+          preferredChannel: 'WhatsApp'
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { min: 70, max: 105, grid: { color: 'rgba(255,255,255,0.05)' } },
-            x: { grid: { display: false } }
+        radarValues: [88, 92, 79, 85, 66, 94],
+        wellnessSignals: [
+          { label: 'Recovery', note: 'Slept 8 hours after Saturday fixture.', status: 'Strong' },
+          { label: 'School load', note: 'Mathematics test on Thursday.', status: 'Monitor' },
+          { label: 'Mood', note: 'High confidence after 2 goals in training.', status: 'Strong' }
+        ]
+      },
+      {
+        id: 2,
+        name: 'Lerato Nkosi',
+        position: 'Midfielder',
+        number: 6,
+        age: 16,
+        attendance: 92,
+        readiness: 87,
+        academics: 'B+',
+        wellnessRisk: 'Low',
+        availability: 'Rotation',
+        school: 'St David’s Academy',
+        medical: 'Cleared',
+        focus: 'Tempo control',
+        story: 'Lerato is balancing school exams with an advanced passing curriculum and is ready for more on-ball responsibility.',
+        goals: ['Line-breaking passes', 'Body shape', 'Captain communication'],
+        notes: 'Parent prefers early evening updates. Lerato responds well to confidence-based feedback.',
+        gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+        parent: {
+          name: 'Sipho Nkosi',
+          phone: '+27 73 204 1188',
+          email: 'sipho.nkosi@example.com',
+          preferredChannel: 'Email'
+        },
+        radarValues: [78, 75, 93, 84, 81, 89],
+        wellnessSignals: [
+          { label: 'Recovery', note: 'Minor quad tightness, no pain reported.', status: 'Monitor' },
+          { label: 'School load', note: 'Project submission due tomorrow.', status: 'Monitor' },
+          { label: 'Mood', note: 'Calm and engaged in classroom session.', status: 'Strong' }
+        ]
+      },
+      {
+        id: 3,
+        name: 'Ayo Daniels',
+        position: 'Centre Back',
+        number: 4,
+        age: 17,
+        attendance: 97,
+        readiness: 94,
+        academics: 'B',
+        wellnessRisk: 'Moderate',
+        availability: 'Monitor load',
+        school: 'Kingsmead College',
+        medical: 'Ankle tape recommended',
+        focus: 'Distribution',
+        story: 'Ayo is emerging as the defensive organizer and now has a tailored family-facing recovery plan before tournament week.',
+        goals: ['First pass quality', 'Defensive scanning', 'Load management'],
+        notes: 'Family wants proactive check-ins after back-to-back matches to manage ankle stiffness.',
+        gradient: 'linear-gradient(135deg, #10b981, #14b8a6)',
+        parent: {
+          name: 'Funmi Daniels',
+          phone: '+27 71 998 4455',
+          email: 'funmi.daniels@example.com',
+          preferredChannel: 'SMS'
+        },
+        radarValues: [74, 68, 85, 72, 94, 90],
+        wellnessSignals: [
+          { label: 'Recovery', note: 'Compression protocol completed this morning.', status: 'Strong' },
+          { label: 'School load', note: 'Normal class schedule.', status: 'Strong' },
+          { label: 'Mood', note: 'Needs confidence after ankle management session.', status: 'Monitor' }
+        ]
+      }
+    ];
+
+    const defaultInteractions = [
+      {
+        id: 1,
+        parentName: 'Nomsa Mokoena',
+        playerName: 'Thabo Mokoena',
+        subject: 'Matchday nutrition reminder',
+        summary: 'Shared travel snacks, hydration target, and report time for tomorrow’s fixture.',
+        channel: 'WhatsApp',
+        time: '18 min ago',
+        status: 'Delivered'
+      },
+      {
+        id: 2,
+        parentName: 'Sipho Nkosi',
+        playerName: 'Lerato Nkosi',
+        subject: 'Exam week support plan',
+        summary: 'Aligned on lighter Wednesday load and study hall transport timing.',
+        channel: 'Email',
+        time: '1 hr ago',
+        status: 'Scheduled'
+      },
+      {
+        id: 3,
+        parentName: 'Funmi Daniels',
+        playerName: 'Ayo Daniels',
+        subject: 'Recovery check-in',
+        summary: 'Reviewed ankle response and confirmed modified warm-up for today.',
+        channel: 'SMS',
+        time: 'Today, 07:30',
+        status: 'Delivered'
+      }
+    ];
+
+    const state = {
+      darkMode: true,
+      sidebarOpen: false,
+      search: '',
+      selectedPlayerId: 1,
+      attendanceData: [92, 95, 88, 100, 94, 97, 93],
+      players: structuredClone(defaultPlayers),
+      parentInteractions: structuredClone(defaultInteractions),
+      uiMessage: 'Compose a player or parent update and keep your family communication log in one place.',
+      firebase: {
+        connected: false,
+        status: 'Demo mode active. Add Firebase settings to enable Auth + Firestore sync.',
+        user: '',
+        lastSyncedAt: '',
+        log: 'No cloud sync yet. Local dashboard data is ready to sync when Firebase is configured.',
+        config: {
+          apiKey: '',
+          authDomain: '',
+          projectId: '',
+          appId: '',
+          messagingSenderId: ''
+        }
+      }
+    };
+
+    const els = {};
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character]));
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/`/g, '&#96;');
+    }
+
+    const allowedGradients = new Set(defaultPlayers.map((player) => player.gradient));
+
+    function safeGradient(value) {
+      return allowedGradients.has(value) ? value : defaultPlayers[0].gradient;
+    }
+
+    function reportFirebaseError(userMessage, error) {
+      console.error(userMessage, error);
+      return userMessage;
+    }
+
+    function selectedPlayer() {
+      return state.players.find((player) => player.id === state.selectedPlayerId) || state.players[0];
+    }
+
+    function filteredPlayers() {
+      const term = state.search.trim().toLowerCase();
+      if (!term) {
+        return state.players;
+      }
+
+      return state.players.filter((player) => [
+        player.name,
+        player.position,
+        player.focus,
+        player.parent.name,
+        player.parent.preferredChannel,
+        ...player.goals
+      ].join(' ').toLowerCase().includes(term));
+    }
+
+    function attendanceAverage() {
+      return (state.attendanceData.reduce((sum, value) => sum + value, 0) / state.attendanceData.length).toFixed(1);
+    }
+
+    function parentReplyRate() {
+      const delivered = state.parentInteractions.filter((item) => item.status === 'Delivered').length;
+      return Math.round((delivered / state.parentInteractions.length) * 100);
+    }
+
+    function urgentAlerts() {
+      return state.players.filter((player) => player.wellnessRisk !== 'Low' || player.availability !== 'Match ready').length;
+    }
+
+    function persistState() {
+      localStorage.setItem('ultra-squad-nexus', JSON.stringify({
+        darkMode: state.darkMode,
+        selectedPlayerId: state.selectedPlayerId,
+        attendanceData: state.attendanceData,
+        players: state.players,
+        parentInteractions: state.parentInteractions,
+        firebase: state.firebase
+      }));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem('ultra-squad-nexus');
+      if (!raw) {
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        state.darkMode = parsed.darkMode ?? state.darkMode;
+        state.selectedPlayerId = parsed.selectedPlayerId ?? state.selectedPlayerId;
+        state.attendanceData = parsed.attendanceData?.length ? parsed.attendanceData : state.attendanceData;
+        state.players = parsed.players?.length ? parsed.players : state.players;
+        state.parentInteractions = parsed.parentInteractions?.length ? parsed.parentInteractions : state.parentInteractions;
+        state.firebase = parsed.firebase ? { ...state.firebase, ...parsed.firebase, config: { ...state.firebase.config, ...(parsed.firebase.config || {}) } } : state.firebase;
+      } catch (error) {
+        console.warn('Failed to restore saved state', error);
+      }
+    }
+
+    function applyTheme() {
+      document.body.classList.toggle('light', !state.darkMode);
+      els.themeToggle.textContent = state.darkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
+
+    function syncMessageDraft(player) {
+      els.messagePlayer.value = String(player.id);
+      els.messageSubject.value = 'Training readiness update';
+      els.messageBody.value = `${player.name} completed today’s work with a focus on ${player.focus.toLowerCase()}. Please support recovery and tomorrow’s punctual arrival.`;
+    }
+
+    function renderAttendanceChart() {
+      els.attendanceChart.innerHTML = state.attendanceData.map((value, index) => {
+        const labels = ['Mar 3', 'Mar 4', 'Mar 5', 'Mar 6', 'Mar 7', 'Mar 8', 'Mar 9'];
+        const height = Math.max(30, Math.round((value / 100) * 220));
+        return `
+          <div class="chart-bar-wrap">
+            <div class="chart-bar" data-value="${value}%" style="height:${height}px;"></div>
+            <div class="chart-label">${labels[index]}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPlayerList() {
+      const players = filteredPlayers();
+      els.playerList.innerHTML = players.map((player) => `
+        <button class="player-card" data-player-id="${player.id}" type="button" aria-label="${escapeAttribute(`${player.name}, ${player.position}, attendance ${player.attendance}%, parent ${player.parent.name}`)}">
+          <div class="player-art" data-player-art="${player.id}"></div>
+          <div style="text-align:left;">
+            <div class="card-header" style="align-items:center;">
+              <strong>${escapeHtml(player.name)}</strong>
+              <span class="tiny-badge ${player.availability === 'Match ready' ? 'badge-success' : 'badge-warning'}">${escapeHtml(player.availability)}</span>
+            </div>
+            <div class="muted" style="margin-top:0.35rem;">${escapeHtml(player.position)} • #${player.number} • ${player.age}y</div>
+            <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">Parent: ${escapeHtml(player.parent.name)} • ${escapeHtml(player.parent.preferredChannel)}</div>
+          </div>
+          <div style="text-align:right;">
+            <strong style="color:#34d399;">${player.attendance}%</strong>
+            <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">${escapeHtml(player.focus)}</div>
+          </div>
+        </button>
+      `).join('');
+
+      els.visibleCount.textContent = `${players.length} visible`;
+
+      els.playerList.querySelectorAll('[data-player-id]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.selectedPlayerId = Number(button.dataset.playerId);
+          syncMessageDraft(selectedPlayer());
+          render();
+          openModal();
+        });
+      });
+
+      players.forEach((player) => {
+        const art = els.playerList.querySelector(`[data-player-art="${player.id}"]`);
+        if (art) {
+          art.style.background = safeGradient(player.gradient);
+        }
+      });
+    }
+
+    function renderSpotlight() {
+      const player = selectedPlayer();
+      els.selectedPlayerName.textContent = player.name;
+      els.selectedPlayerArt.style.background = safeGradient(player.gradient);
+      els.selectedPlayerStory.textContent = player.story;
+      els.selectedPlayerTags.innerHTML = player.goals.map((goal) => `<span class="tag">${escapeHtml(goal)}</span>`).join('');
+      els.selectedStats.innerHTML = `
+        <div class="mini-stat"><div class="label">Readiness</div><div class="metric-value" style="font-size:1.55rem;">${player.readiness}%</div></div>
+        <div class="mini-stat"><div class="label">Academics</div><div class="metric-value" style="font-size:1.55rem;">${escapeHtml(player.academics)}</div></div>
+        <div class="mini-stat"><div class="label">Wellness risk</div><div class="metric-value" style="font-size:1.55rem;">${escapeHtml(player.wellnessRisk)}</div></div>
+      `;
+
+      els.wellnessList.innerHTML = player.wellnessSignals.map((signal) => `
+        <div class="wellness-item">
+          <div class="card-header" style="align-items:center;">
+            <strong>${escapeHtml(signal.label)}</strong>
+            <span class="${signal.status === 'Strong' ? 'signal-strong' : signal.status === 'Monitor' ? 'signal-monitor' : 'signal-action'}">${escapeHtml(signal.status)}</span>
+          </div>
+          <p class="muted" style="margin:0.55rem 0 0;">${escapeHtml(signal.note)}</p>
+        </div>
+      `).join('');
+
+      els.preferredChannelBadge.textContent = `Preferred channel: ${player.parent.preferredChannel}`;
+    }
+
+    function renderTimeline() {
+      els.interactionList.innerHTML = state.parentInteractions.map((item) => `
+        <div class="timeline-item">
+          <div class="timeline-item-header">
+            <div>
+              <div style="display:flex;gap:0.65rem;align-items:center;flex-wrap:wrap;">
+                <strong>${escapeHtml(item.subject)}</strong>
+                <span class="tiny-badge ${item.status === 'Delivered' ? 'badge-success' : item.status === 'Scheduled' ? 'badge-warning' : 'badge-accent'}">${escapeHtml(item.status)}</span>
+              </div>
+              <div class="timeline-meta" style="margin-top:0.45rem;">${escapeHtml(item.parentName)} • ${escapeHtml(item.playerName)}</div>
+              <p class="muted" style="margin:0.5rem 0 0;">${escapeHtml(item.summary)}</p>
+            </div>
+            <div class="timeline-meta" style="text-align:right;">${escapeHtml(item.channel)}<br>${escapeHtml(item.time)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderFirebaseFields() {
+      const labels = [
+        ['apiKey', 'API Key'],
+        ['authDomain', 'Auth Domain'],
+        ['projectId', 'Project ID'],
+        ['appId', 'App ID'],
+        ['messagingSenderId', 'Messaging Sender ID']
+      ];
+
+      els.firebaseFields.innerHTML = labels.map(([key, label]) => `
+        <label class="field-row">
+          <span class="label">${escapeHtml(label)}</span>
+          <input type="text" data-firebase-key="${escapeAttribute(key)}" value="${escapeAttribute(state.firebase.config[key] || '')}">
+        </label>
+      `).join('');
+
+      els.firebaseFields.querySelectorAll('[data-firebase-key]').forEach((input) => {
+        input.addEventListener('input', () => {
+          state.firebase.config[input.dataset.firebaseKey] = input.value;
+          persistState();
+        });
+      });
+    }
+
+    function renderFirebaseStatus() {
+      const connected = state.firebase.connected;
+      els.firebasePill.textContent = connected ? 'Connected' : 'Demo mode';
+      els.firebasePill.className = `tiny-badge ${connected ? 'badge-success' : 'badge-warning'}`;
+      els.firebaseSidebarStatus.textContent = state.firebase.status;
+      els.firebaseConnectionBadge.textContent = connected ? 'Connected' : 'Awaiting config';
+      els.firebaseConnectionBadge.className = `metric-badge ${connected ? 'badge-success' : 'badge-warning'}`;
+      els.firebaseStatus.textContent = state.firebase.status;
+      els.firebaseUser.textContent = state.firebase.user ? `Signed in as ${state.firebase.user}` : '';
+      els.firebaseState.textContent = connected ? 'Live' : 'Ready';
+      els.firebaseLastSyncNote.textContent = state.firebase.lastSyncedAt ? `Last sync: ${state.firebase.lastSyncedAt}` : 'Connect and sync with Firestore';
+      els.firebaseLog.textContent = state.firebase.log;
+      els.firebaseLogTime.textContent = state.firebase.lastSyncedAt || 'Not yet synced';
+      els.firebaseAuthState.textContent = state.firebase.user ? 'On' : 'Off';
+    }
+
+    function renderMetrics() {
+      els.activePlayers.textContent = String(state.players.length);
+      els.parentReplyRate.textContent = `${parentReplyRate()}%`;
+      els.attendanceAverage.textContent = `${attendanceAverage()}%`;
+      els.replyRateBadge.textContent = `${parentReplyRate()}% replied`;
+      els.replyRateBadge.className = `status-badge ${parentReplyRate() >= 90 ? 'badge-success' : 'badge-warning'}`;
+      els.urgentAlertsCount.textContent = String(urgentAlerts());
+      els.syncedPlayerCount.textContent = String(state.players.length);
+      els.syncedInteractionCount.textContent = String(state.parentInteractions.length);
+    }
+
+    function renderModal() {
+      const player = selectedPlayer();
+      els.modalPlayerName.textContent = player.name;
+      els.modalPlayerRole.textContent = `${player.position} • #${player.number}`;
+      els.modalPlayerMeta.textContent = `Age ${player.age} • Attendance ${player.attendance}%`;
+      els.modalParentLead.textContent = `Parent lead: ${player.parent.name}`;
+      els.modalSchool.textContent = player.school;
+      els.modalMedical.textContent = player.medical;
+      els.modalAvailability.textContent = player.availability;
+      els.modalParentPhone.textContent = `${player.parent.name} • ${player.parent.phone}`;
+      els.modalParentEmail.textContent = player.parent.email;
+      els.modalParentChannel.textContent = `Preferred channel: ${player.parent.preferredChannel}`;
+      els.modalNotes.textContent = player.notes;
+      els.modalPlayerArt.style.background = safeGradient(player.gradient);
+
+      els.skillBars.innerHTML = skillLabels.map((label, index) => `
+        <div class="skill-row">
+          <div class="card-header" style="align-items:center;">
+            <strong>${label}</strong>
+            <span>${player.radarValues[index]}%</span>
+          </div>
+          <div class="skill-progress"><span style="width:${player.radarValues[index]}%;"></span></div>
+        </div>
+      `).join('');
+    }
+
+    function renderMessage() {
+      els.uiMessage.textContent = state.uiMessage;
+    }
+
+    function render() {
+      applyTheme();
+      renderMetrics();
+      renderAttendanceChart();
+      renderPlayerList();
+      renderSpotlight();
+      renderTimeline();
+      renderFirebaseFields();
+      renderFirebaseStatus();
+      renderModal();
+      renderMessage();
+      persistState();
+    }
+
+    function openModal() {
+      renderModal();
+      els.playerModal.classList.add('open');
+      els.playerModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      els.playerModal.classList.remove('open');
+      els.playerModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function queueWellnessNote() {
+      const player = selectedPlayer();
+      const schoolLoadSignal = player.wellnessSignals.find((signal) => signal.label.toLowerCase().includes('school'));
+      state.parentInteractions.unshift({
+        id: Date.now(),
+        parentName: player.parent.name,
+        playerName: player.name,
+        subject: 'Wellness pulse note',
+        summary: `${player.name} flagged for ${(schoolLoadSignal?.status || player.wellnessRisk).toLowerCase()} school-load monitoring. Family follow-up queued.`,
+        channel: player.parent.preferredChannel,
+        time: 'Just now',
+        status: 'Queued'
+      });
+      state.parentInteractions = state.parentInteractions.slice(0, MAX_VISIBLE_INTERACTIONS);
+      state.uiMessage = `Wellness note queued for ${player.parent.name}.`;
+      render();
+    }
+
+    async function sendParentUpdate() {
+      const playerId = Number(els.messagePlayer.value);
+      const player = state.players.find((entry) => entry.id === playerId) || selectedPlayer();
+      const subject = els.messageSubject.value.trim() || 'Family update';
+      const message = els.messageBody.value.trim();
+
+      if (!message) {
+        state.uiMessage = 'Add a message before sending the update.';
+        renderMessage();
+        return;
+      }
+      if (subject.length > MAX_SUBJECT_LENGTH) {
+        state.uiMessage = `Keep the subject under ${MAX_SUBJECT_LENGTH} characters.`;
+        renderMessage();
+        return;
+      }
+      if (message.length > MAX_MESSAGE_LENGTH) {
+        state.uiMessage = `Keep the message under ${MAX_MESSAGE_LENGTH} characters.`;
+        renderMessage();
+        return;
+      }
+
+      state.parentInteractions.unshift({
+        id: Date.now(),
+        parentName: player.parent.name,
+        playerName: player.name,
+        subject,
+        summary: message,
+        channel: player.parent.preferredChannel,
+        time: 'Just now',
+        status: 'Delivered'
+      });
+      state.parentInteractions = state.parentInteractions.slice(0, MAX_VISIBLE_INTERACTIONS);
+      state.uiMessage = `Update sent to ${player.parent.name} via ${player.parent.preferredChannel}.`;
+
+      if (state.firebase.connected) {
+        try {
+          await syncToFirebase('Parent update synced to Firebase.', true);
+        } catch (error) {
+          state.uiMessage = error.message;
+        }
+      }
+
+      render();
+    }
+
+    function buildSyncPayload() {
+      return {
+        dashboardName: 'Ultra Squad Nexus',
+        attendanceData: state.attendanceData,
+        players: state.players,
+        parentInteractions: state.parentInteractions,
+        summary: {
+          attendanceAverage: attendanceAverage(),
+          parentReplyRate: parentReplyRate()
+        }
+      };
+    }
+
+    async function connectFirebase() {
+      const { apiKey, authDomain, projectId, appId } = state.firebase.config;
+      if (!apiKey || !authDomain || !projectId || !appId) {
+        state.firebase.status = 'Enter apiKey, authDomain, projectId, and appId to connect Firebase.';
+        renderFirebaseStatus();
+        persistState();
+        return;
+      }
+
+      try {
+        await firebaseBridge.connect(state.firebase.config);
+        state.firebase.connected = true;
+        state.firebase.status = `Connected to Firebase project ${projectId}.`;
+        state.firebase.log = 'Firebase client initialized. Sign in anonymously to attach coach activity.';
+      } catch (error) {
+        state.firebase.connected = false;
+        state.firebase.status = reportFirebaseError('Firebase connection failed. Check your settings and network access.', error);
+      }
+
+      render();
+    }
+
+    async function signInToFirebase() {
+      try {
+        const credential = await firebaseBridge.signIn();
+        state.firebase.user = credential.user.uid;
+        state.firebase.status = 'Coach session authenticated with Firebase Anonymous Auth.';
+        state.firebase.log = `Anonymous session active for ${credential.user.uid}.`;
+      } catch (error) {
+        state.firebase.status = reportFirebaseError('Firebase sign-in failed. Try reconnecting and then sign in again.', error);
+      }
+
+      render();
+    }
+
+    async function syncToFirebase(customMessage, throwOnFailure = false) {
+      if (!state.firebase.connected) {
+        state.firebase.status = 'Connect Firebase before syncing.';
+        renderFirebaseStatus();
+        persistState();
+        return;
+      }
+
+      try {
+        await firebaseBridge.syncDashboard(buildSyncPayload());
+        state.firebase.lastSyncedAt = new Date().toLocaleString();
+        state.firebase.status = 'Firebase sync completed successfully.';
+        state.firebase.log = customMessage || 'Dashboard player profiles and parent interactions synced to Firestore.';
+      } catch (error) {
+        state.firebase.status = reportFirebaseError('Firebase sync failed. Data remains saved locally.', error);
+        if (throwOnFailure) {
+          throw new Error('Update saved locally. Firebase sync is unavailable right now.');
+        }
+      }
+      render();
+    }
+
+    async function loadFromFirebase() {
+      if (!state.firebase.connected) {
+        state.firebase.status = 'Connect Firebase before loading cloud data.';
+        renderFirebaseStatus();
+        persistState();
+        return;
+      }
+
+      try {
+        const payload = await firebaseBridge.loadDashboard();
+        if (!payload) {
+          state.firebase.log = 'No Firestore dashboard document found yet. Run a sync to create one.';
+          render();
+          return;
+        }
+
+        if (Array.isArray(payload.players) && payload.players.length) {
+          state.players = payload.players;
+          populatePlayerSelect();
+          syncMessageDraft(selectedPlayer());
+        }
+        if (Array.isArray(payload.parentInteractions) && payload.parentInteractions.length) {
+          state.parentInteractions = payload.parentInteractions.slice(0, MAX_VISIBLE_INTERACTIONS);
+        }
+        if (Array.isArray(payload.attendanceData) && payload.attendanceData.length) {
+          state.attendanceData = payload.attendanceData;
+        }
+        if (payload.updatedAt) {
+          state.firebase.lastSyncedAt = new Date(payload.updatedAt).toLocaleString();
+        }
+        state.firebase.status = 'Loaded latest dashboard snapshot from Firestore.';
+        state.firebase.log = 'Cloud snapshot pulled into the live dashboard.';
+      } catch (error) {
+        state.firebase.status = reportFirebaseError('Firebase load failed. Reconnect and try again.', error);
+      }
+
+      render();
+    }
+
+    function bindElements() {
+      Object.assign(els, {
+        sidebar: document.getElementById('sidebar'),
+        menuToggle: document.getElementById('menu-toggle'),
+        themeToggle: document.getElementById('theme-toggle'),
+        searchInput: document.getElementById('search-input'),
+        attendanceChart: document.getElementById('attendance-chart'),
+        playerList: document.getElementById('player-list'),
+        visibleCount: document.getElementById('visible-count'),
+        selectedPlayerName: document.getElementById('selected-player-name'),
+        selectedPlayerArt: document.getElementById('selected-player-art'),
+        selectedStats: document.getElementById('selected-stats'),
+        selectedPlayerStory: document.getElementById('selected-player-story'),
+        selectedPlayerTags: document.getElementById('selected-player-tags'),
+        wellnessList: document.getElementById('wellness-list'),
+        preferredChannelBadge: document.getElementById('preferred-channel-badge'),
+        interactionList: document.getElementById('interaction-list'),
+        messagePlayer: document.getElementById('message-player'),
+        messageSubject: document.getElementById('message-subject'),
+        messageBody: document.getElementById('message-body'),
+        uiMessage: document.getElementById('ui-message'),
+        firebaseFields: document.getElementById('firebase-fields'),
+        firebasePill: document.getElementById('firebase-pill'),
+        firebaseSidebarStatus: document.getElementById('firebase-sidebar-status'),
+        firebaseConnectionBadge: document.getElementById('firebase-connection-badge'),
+        firebaseStatus: document.getElementById('firebase-status'),
+        firebaseUser: document.getElementById('firebase-user'),
+        firebaseState: document.getElementById('firebase-state'),
+        firebaseLastSyncNote: document.getElementById('firebase-last-sync-note'),
+        firebaseLog: document.getElementById('firebase-log'),
+        firebaseLogTime: document.getElementById('firebase-log-time'),
+        firebaseAuthState: document.getElementById('firebase-auth-state'),
+        activePlayers: document.getElementById('active-players'),
+        parentReplyRate: document.getElementById('parent-reply-rate'),
+        attendanceAverage: document.getElementById('attendance-average'),
+        replyRateBadge: document.getElementById('reply-rate-badge'),
+        urgentAlertsCount: document.getElementById('urgent-alerts-count'),
+        syncedPlayerCount: document.getElementById('synced-player-count'),
+        syncedInteractionCount: document.getElementById('synced-interaction-count'),
+        playerModal: document.getElementById('player-modal'),
+        modalPlayerName: document.getElementById('modal-player-name'),
+        modalPlayerArt: document.getElementById('modal-player-art'),
+        modalPlayerRole: document.getElementById('modal-player-role'),
+        modalPlayerMeta: document.getElementById('modal-player-meta'),
+        modalParentLead: document.getElementById('modal-parent-lead'),
+        modalSchool: document.getElementById('modal-school'),
+        modalMedical: document.getElementById('modal-medical'),
+        modalAvailability: document.getElementById('modal-availability'),
+        modalParentPhone: document.getElementById('modal-parent-phone'),
+        modalParentEmail: document.getElementById('modal-parent-email'),
+        modalParentChannel: document.getElementById('modal-parent-channel'),
+        skillBars: document.getElementById('skill-bars'),
+        modalNotes: document.getElementById('modal-notes'),
+        openSelectedPlayer: document.getElementById('open-selected-player'),
+        viewFullProfile: document.getElementById('view-full-profile')
+      });
+    }
+
+    function populatePlayerSelect() {
+      els.messagePlayer.innerHTML = state.players.map((player) => `
+        <option value="${player.id}">${escapeHtml(player.name)}</option>
+      `).join('');
+    }
+
+    function bindEvents() {
+      els.menuToggle.addEventListener('click', () => {
+        state.sidebarOpen = !state.sidebarOpen;
+        els.sidebar.classList.toggle('open', state.sidebarOpen);
+      });
+
+      els.themeToggle.addEventListener('click', () => {
+        state.darkMode = !state.darkMode;
+        render();
+      });
+
+      els.searchInput.addEventListener('input', (event) => {
+        state.search = event.target.value;
+        renderPlayerList();
+      });
+
+      els.openSelectedPlayer.addEventListener('click', openModal);
+      els.viewFullProfile.addEventListener('click', openModal);
+      document.getElementById('close-modal').addEventListener('click', closeModal);
+      els.playerModal.addEventListener('click', (event) => {
+        if (event.target === els.playerModal) {
+          closeModal();
+        }
+      });
+
+      document.getElementById('prepare-reminder').addEventListener('click', () => {
+        state.uiMessage = `Matchday reminder prepared for ${selectedPlayer().parent.name}.`;
+        closeModal();
+        renderMessage();
+      });
+
+      document.getElementById('log-recovery').addEventListener('click', () => {
+        state.uiMessage = `Recovery check-in logged for ${selectedPlayer().name}.`;
+        closeModal();
+        renderMessage();
+      });
+
+      document.getElementById('queue-note').addEventListener('click', queueWellnessNote);
+      document.getElementById('send-update').addEventListener('click', sendParentUpdate);
+      document.getElementById('connect-firebase').addEventListener('click', connectFirebase);
+      document.getElementById('sign-in-firebase').addEventListener('click', signInToFirebase);
+      document.getElementById('load-firebase').addEventListener('click', loadFromFirebase);
+      document.getElementById('sync-now').addEventListener('click', () => syncToFirebase());
+      document.getElementById('sync-overview-button').addEventListener('click', () => syncToFirebase());
+
+      document.querySelectorAll('.nav-link').forEach((link) => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth <= 940) {
+            state.sidebarOpen = false;
+            els.sidebar.classList.remove('open');
           }
-        }
+        });
       });
+    }
 
-      // Radar Chart (updates when modal opens)
-      let radarChart = null;
-      Alpine.effect(() => {
-        if (Alpine.store('openModal') && Alpine.store('selectedPlayer')) {
-          setTimeout(() => {
-            if (radarChart) radarChart.destroy();
-            radarChart = new Chart(document.getElementById('playerRadar'), {
-              type: 'radar',
-              data: {
-                labels: Alpine.store('radarData').labels,
-                datasets: [{
-                  label: Alpine.store('selectedPlayer')?.name || 'Player',
-                  data: Alpine.store('radarData').values,
-                  backgroundColor: 'rgba(124, 58, 237, 0.2)',
-                  borderColor: '#7c3aed',
-                  pointBackgroundColor: '#7c3aed',
-                  pointBorderColor: '#fff',
-                  borderWidth: 2
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  r: {
-                    angleLines: { color: 'rgba(255,255,255,0.1)' },
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    pointLabels: { color: '#94a3b8' },
-                    ticks: { color: '#94a3b8', backdropColor: 'transparent' }
-                  }
-                },
-                plugins: { legend: { labels: { color: '#e2e8f0' } } }
-              }
-            });
-          }, 100);
-        }
-      });
-    });
+    function init() {
+      bindElements();
+      loadState();
+      populatePlayerSelect();
+      bindEvents();
+      render();
+      syncMessageDraft(selectedPlayer());
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
   </script>
-
 </body>
 </html>
