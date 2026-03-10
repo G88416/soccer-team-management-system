@@ -862,7 +862,7 @@
 
         <label class="search-wrap" for="search-input">
           <span aria-hidden="true">🔎</span>
-          <input id="search-input" type="text" placeholder="Search players, parents, wellness goals..." />
+          <input id="search-input" type="text" aria-label="Search players, parents, and wellness goals" placeholder="Search players, parents, wellness goals..." />
         </label>
 
         <div class="topbar-actions">
@@ -1162,7 +1162,13 @@
       },
       async connect(config) {
         const modules = await this.loadModules();
-        const existing = modules.getApps().find((app) => app.name === 'ultra-squad-web');
+        const existing = modules.getApps().find((app) =>
+          app.name === 'ultra-squad-web' &&
+          app.options?.projectId === config.projectId &&
+          app.options?.apiKey === config.apiKey &&
+          app.options?.authDomain === config.authDomain &&
+          app.options?.appId === config.appId
+        );
         this.app = existing || modules.initializeApp(config, 'ultra-squad-web');
         this.auth = modules.getAuth(this.app);
         this.db = modules.getFirestore(this.app);
@@ -1199,6 +1205,9 @@
     };
 
     const skillLabels = ['Speed', 'Shooting', 'Passing', 'Dribbling', 'Defending', 'Stamina'];
+    const MAX_VISIBLE_INTERACTIONS = 6;
+    const MAX_SUBJECT_LENGTH = 80;
+    const MAX_MESSAGE_LENGTH = 500;
 
     const defaultPlayers = [
       {
@@ -1356,6 +1365,31 @@
 
     const els = {};
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character]));
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/`/g, '&#96;');
+    }
+
+    const allowedGradients = new Set(defaultPlayers.map((player) => player.gradient));
+
+    function safeGradient(value) {
+      return allowedGradients.has(value) ? value : defaultPlayers[0].gradient;
+    }
+
+    function reportFirebaseError(userMessage, error) {
+      console.error(userMessage, error);
+      return userMessage;
+    }
+
     function selectedPlayer() {
       return state.players.find((player) => player.id === state.selectedPlayerId) || state.players[0];
     }
@@ -1446,19 +1480,19 @@
     function renderPlayerList() {
       const players = filteredPlayers();
       els.playerList.innerHTML = players.map((player) => `
-        <button class="player-card" data-player-id="${player.id}" type="button">
-          <div class="player-art" style="--gradient:${player.gradient};"></div>
+        <button class="player-card" data-player-id="${player.id}" type="button" aria-label="${escapeAttribute(`${player.name}, ${player.position}, attendance ${player.attendance}%, parent ${player.parent.name}`)}">
+          <div class="player-art" data-player-art="${player.id}"></div>
           <div style="text-align:left;">
             <div class="card-header" style="align-items:center;">
-              <strong>${player.name}</strong>
-              <span class="tiny-badge ${player.availability === 'Match ready' ? 'badge-success' : 'badge-warning'}">${player.availability}</span>
+              <strong>${escapeHtml(player.name)}</strong>
+              <span class="tiny-badge ${player.availability === 'Match ready' ? 'badge-success' : 'badge-warning'}">${escapeHtml(player.availability)}</span>
             </div>
-            <div class="muted" style="margin-top:0.35rem;">${player.position} • #${player.number} • ${player.age}y</div>
-            <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">Parent: ${player.parent.name} • ${player.parent.preferredChannel}</div>
+            <div class="muted" style="margin-top:0.35rem;">${escapeHtml(player.position)} • #${player.number} • ${player.age}y</div>
+            <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">Parent: ${escapeHtml(player.parent.name)} • ${escapeHtml(player.parent.preferredChannel)}</div>
           </div>
           <div style="text-align:right;">
             <strong style="color:#34d399;">${player.attendance}%</strong>
-            <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">${player.focus}</div>
+            <div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">${escapeHtml(player.focus)}</div>
           </div>
         </button>
       `).join('');
@@ -1473,27 +1507,34 @@
           openModal();
         });
       });
+
+      players.forEach((player) => {
+        const art = els.playerList.querySelector(`[data-player-art="${player.id}"]`);
+        if (art) {
+          art.style.background = safeGradient(player.gradient);
+        }
+      });
     }
 
     function renderSpotlight() {
       const player = selectedPlayer();
       els.selectedPlayerName.textContent = player.name;
-      els.selectedPlayerArt.style.setProperty('--gradient', player.gradient);
+      els.selectedPlayerArt.style.background = safeGradient(player.gradient);
       els.selectedPlayerStory.textContent = player.story;
-      els.selectedPlayerTags.innerHTML = player.goals.map((goal) => `<span class="tag">${goal}</span>`).join('');
+      els.selectedPlayerTags.innerHTML = player.goals.map((goal) => `<span class="tag">${escapeHtml(goal)}</span>`).join('');
       els.selectedStats.innerHTML = `
         <div class="mini-stat"><div class="label">Readiness</div><div class="metric-value" style="font-size:1.55rem;">${player.readiness}%</div></div>
-        <div class="mini-stat"><div class="label">Academics</div><div class="metric-value" style="font-size:1.55rem;">${player.academics}</div></div>
-        <div class="mini-stat"><div class="label">Wellness risk</div><div class="metric-value" style="font-size:1.55rem;">${player.wellnessRisk}</div></div>
+        <div class="mini-stat"><div class="label">Academics</div><div class="metric-value" style="font-size:1.55rem;">${escapeHtml(player.academics)}</div></div>
+        <div class="mini-stat"><div class="label">Wellness risk</div><div class="metric-value" style="font-size:1.55rem;">${escapeHtml(player.wellnessRisk)}</div></div>
       `;
 
       els.wellnessList.innerHTML = player.wellnessSignals.map((signal) => `
         <div class="wellness-item">
           <div class="card-header" style="align-items:center;">
-            <strong>${signal.label}</strong>
-            <span class="${signal.status === 'Strong' ? 'signal-strong' : signal.status === 'Monitor' ? 'signal-monitor' : 'signal-action'}">${signal.status}</span>
+            <strong>${escapeHtml(signal.label)}</strong>
+            <span class="${signal.status === 'Strong' ? 'signal-strong' : signal.status === 'Monitor' ? 'signal-monitor' : 'signal-action'}">${escapeHtml(signal.status)}</span>
           </div>
-          <p class="muted" style="margin:0.55rem 0 0;">${signal.note}</p>
+          <p class="muted" style="margin:0.55rem 0 0;">${escapeHtml(signal.note)}</p>
         </div>
       `).join('');
 
@@ -1506,13 +1547,13 @@
           <div class="timeline-item-header">
             <div>
               <div style="display:flex;gap:0.65rem;align-items:center;flex-wrap:wrap;">
-                <strong>${item.subject}</strong>
-                <span class="tiny-badge ${item.status === 'Delivered' ? 'badge-success' : item.status === 'Scheduled' ? 'badge-warning' : 'badge-accent'}">${item.status}</span>
+                <strong>${escapeHtml(item.subject)}</strong>
+                <span class="tiny-badge ${item.status === 'Delivered' ? 'badge-success' : item.status === 'Scheduled' ? 'badge-warning' : 'badge-accent'}">${escapeHtml(item.status)}</span>
               </div>
-              <div class="timeline-meta" style="margin-top:0.45rem;">${item.parentName} • ${item.playerName}</div>
-              <p class="muted" style="margin:0.5rem 0 0;">${item.summary}</p>
+              <div class="timeline-meta" style="margin-top:0.45rem;">${escapeHtml(item.parentName)} • ${escapeHtml(item.playerName)}</div>
+              <p class="muted" style="margin:0.5rem 0 0;">${escapeHtml(item.summary)}</p>
             </div>
-            <div class="timeline-meta" style="text-align:right;">${item.channel}<br>${item.time}</div>
+            <div class="timeline-meta" style="text-align:right;">${escapeHtml(item.channel)}<br>${escapeHtml(item.time)}</div>
           </div>
         </div>
       `).join('');
@@ -1529,8 +1570,8 @@
 
       els.firebaseFields.innerHTML = labels.map(([key, label]) => `
         <label class="field-row">
-          <span class="label">${label}</span>
-          <input type="text" data-firebase-key="${key}" value="${state.firebase.config[key] || ''}">
+          <span class="label">${escapeHtml(label)}</span>
+          <input type="text" data-firebase-key="${escapeAttribute(key)}" value="${escapeAttribute(state.firebase.config[key] || '')}">
         </label>
       `).join('');
 
@@ -1582,7 +1623,7 @@
       els.modalParentEmail.textContent = player.parent.email;
       els.modalParentChannel.textContent = `Preferred channel: ${player.parent.preferredChannel}`;
       els.modalNotes.textContent = player.notes;
-      els.modalPlayerArt.style.setProperty('--gradient', player.gradient);
+      els.modalPlayerArt.style.background = safeGradient(player.gradient);
 
       els.skillBars.innerHTML = skillLabels.map((label, index) => `
         <div class="skill-row">
@@ -1626,17 +1667,18 @@
 
     function queueWellnessNote() {
       const player = selectedPlayer();
+      const schoolLoadSignal = player.wellnessSignals.find((signal) => signal.label.toLowerCase().includes('school'));
       state.parentInteractions.unshift({
         id: Date.now(),
         parentName: player.parent.name,
         playerName: player.name,
         subject: 'Wellness pulse note',
-        summary: `${player.name} flagged for ${player.wellnessSignals[1].status.toLowerCase()} school-load monitoring. Family follow-up queued.`,
+        summary: `${player.name} flagged for ${(schoolLoadSignal?.status || player.wellnessRisk).toLowerCase()} school-load monitoring. Family follow-up queued.`,
         channel: player.parent.preferredChannel,
         time: 'Just now',
         status: 'Queued'
       });
-      state.parentInteractions = state.parentInteractions.slice(0, 6);
+      state.parentInteractions = state.parentInteractions.slice(0, MAX_VISIBLE_INTERACTIONS);
       state.uiMessage = `Wellness note queued for ${player.parent.name}.`;
       render();
     }
@@ -1652,6 +1694,16 @@
         renderMessage();
         return;
       }
+      if (subject.length > MAX_SUBJECT_LENGTH) {
+        state.uiMessage = `Keep the subject under ${MAX_SUBJECT_LENGTH} characters.`;
+        renderMessage();
+        return;
+      }
+      if (message.length > MAX_MESSAGE_LENGTH) {
+        state.uiMessage = `Keep the message under ${MAX_MESSAGE_LENGTH} characters.`;
+        renderMessage();
+        return;
+      }
 
       state.parentInteractions.unshift({
         id: Date.now(),
@@ -1663,14 +1715,14 @@
         time: 'Just now',
         status: 'Delivered'
       });
-      state.parentInteractions = state.parentInteractions.slice(0, 6);
+      state.parentInteractions = state.parentInteractions.slice(0, MAX_VISIBLE_INTERACTIONS);
       state.uiMessage = `Update sent to ${player.parent.name} via ${player.parent.preferredChannel}.`;
 
       if (state.firebase.connected) {
         try {
-          await syncToFirebase('Parent update synced to Firebase.');
+          await syncToFirebase('Parent update synced to Firebase.', true);
         } catch (error) {
-          state.uiMessage = `Update saved locally. Firebase sync failed: ${error.message}`;
+          state.uiMessage = error.message;
         }
       }
 
@@ -1706,7 +1758,7 @@
         state.firebase.log = 'Firebase client initialized. Sign in anonymously to attach coach activity.';
       } catch (error) {
         state.firebase.connected = false;
-        state.firebase.status = `Firebase connection failed: ${error.message}`;
+        state.firebase.status = reportFirebaseError('Firebase connection failed. Check your settings and network access.', error);
       }
 
       render();
@@ -1719,13 +1771,13 @@
         state.firebase.status = 'Coach session authenticated with Firebase Anonymous Auth.';
         state.firebase.log = `Anonymous session active for ${credential.user.uid}.`;
       } catch (error) {
-        state.firebase.status = `Firebase sign-in failed: ${error.message}`;
+        state.firebase.status = reportFirebaseError('Firebase sign-in failed. Try reconnecting and then sign in again.', error);
       }
 
       render();
     }
 
-    async function syncToFirebase(customMessage) {
+    async function syncToFirebase(customMessage, throwOnFailure = false) {
       if (!state.firebase.connected) {
         state.firebase.status = 'Connect Firebase before syncing.';
         renderFirebaseStatus();
@@ -1733,10 +1785,17 @@
         return;
       }
 
-      await firebaseBridge.syncDashboard(buildSyncPayload());
-      state.firebase.lastSyncedAt = new Date().toLocaleString();
-      state.firebase.status = 'Firebase sync completed successfully.';
-      state.firebase.log = customMessage || 'Dashboard player profiles and parent interactions synced to Firestore.';
+      try {
+        await firebaseBridge.syncDashboard(buildSyncPayload());
+        state.firebase.lastSyncedAt = new Date().toLocaleString();
+        state.firebase.status = 'Firebase sync completed successfully.';
+        state.firebase.log = customMessage || 'Dashboard player profiles and parent interactions synced to Firestore.';
+      } catch (error) {
+        state.firebase.status = reportFirebaseError('Firebase sync failed. Data remains saved locally.', error);
+        if (throwOnFailure) {
+          throw new Error('Update saved locally. Firebase sync is unavailable right now.');
+        }
+      }
       render();
     }
 
@@ -1762,7 +1821,7 @@
           syncMessageDraft(selectedPlayer());
         }
         if (Array.isArray(payload.parentInteractions) && payload.parentInteractions.length) {
-          state.parentInteractions = payload.parentInteractions;
+          state.parentInteractions = payload.parentInteractions.slice(0, MAX_VISIBLE_INTERACTIONS);
         }
         if (Array.isArray(payload.attendanceData) && payload.attendanceData.length) {
           state.attendanceData = payload.attendanceData;
@@ -1773,7 +1832,7 @@
         state.firebase.status = 'Loaded latest dashboard snapshot from Firestore.';
         state.firebase.log = 'Cloud snapshot pulled into the live dashboard.';
       } catch (error) {
-        state.firebase.status = `Load failed: ${error.message}`;
+        state.firebase.status = reportFirebaseError('Firebase load failed. Reconnect and try again.', error);
       }
 
       render();
@@ -1839,7 +1898,7 @@
 
     function populatePlayerSelect() {
       els.messagePlayer.innerHTML = state.players.map((player) => `
-        <option value="${player.id}">${player.name}</option>
+        <option value="${player.id}">${escapeHtml(player.name)}</option>
       `).join('');
     }
 
