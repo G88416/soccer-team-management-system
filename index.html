@@ -366,6 +366,18 @@
       customNotes: []
     };
 
+    const readinessWeights = {
+      sleep: 8,
+      mood: 12,
+      soreness: 7,
+      stress: 6,
+      attendance: 0.45,
+      wellness: 0.25,
+      form: 0.30,
+      min: 45,
+      max: 99
+    };
+
     const els = {};
 
     function saveState() {
@@ -417,9 +429,24 @@
 
     function readinessOf(player) {
       const attendance = attendanceOf(player);
-      const wellnessScore = (player.wellness.sleep * 8) + (player.wellness.mood * 12) - (player.wellness.soreness * 7) - (player.wellness.stress * 6);
+      const wellnessScore = (
+        (player.wellness.sleep * readinessWeights.sleep) +
+        (player.wellness.mood * readinessWeights.mood) -
+        (player.wellness.soreness * readinessWeights.soreness) -
+        (player.wellness.stress * readinessWeights.stress)
+      );
       const form = goalsOf(player) * 4 + player.fitness;
-      const score = Math.max(45, Math.min(99, Math.round((attendance * 0.45) + (wellnessScore * 0.25) + (form * 0.30))));
+      const score = Math.max(
+        readinessWeights.min,
+        Math.min(
+          readinessWeights.max,
+          Math.round(
+            (attendance * readinessWeights.attendance) +
+            (wellnessScore * readinessWeights.wellness) +
+            (form * readinessWeights.form)
+          )
+        )
+      );
       return score;
     }
 
@@ -482,6 +509,14 @@
 
     function selectedChild() {
       return state.players.find((p) => p.id === Number(state.selectedChildId)) || state.players[0];
+    }
+
+    function orderedMessages() {
+      return [...state.messages].sort((a, b) => {
+        const byDate = String(b.date).localeCompare(String(a.date));
+        if (byDate !== 0) return byDate;
+        return String(b.id).localeCompare(String(a.id));
+      });
     }
 
     function renderPortalCards() {
@@ -611,7 +646,7 @@
             <tbody>
               ${state.players.map((p) => `<tr>
                 <td>${esc(p.name)}</td>
-                <td>${p.attendanceHistory.join('% , ')}%</td>
+                <td>${p.attendanceHistory.map((value) => `${value}%`).join(', ')}</td>
                 <td>${attendanceOf(p)}%</td>
                 <td>${attendanceOf(p) < 85 ? '<span class="warn">Needs intervention</span>' : '<span class="ok">Stable</span>'}</td>
               </tr>`).join('')}
@@ -623,11 +658,13 @@
       if (tab === 'Messages') {
         return `
           <div class="list">
-            ${state.messages.map((m) => `<article class="list-item"><strong>${esc(m.subject)}</strong><p>${esc(m.date)} • ${esc(m.from)} → ${esc(m.to)}<br>${esc(m.body)}</p></article>`).join('')}
+            ${orderedMessages().map((m) => `<article class="list-item"><strong>${esc(m.subject)}</strong><p>${esc(m.date)} • ${esc(m.from)} → ${esc(m.to)}<br>${esc(m.body)}</p></article>`).join('')}
           </div>
           <div class="composer">
-            <input id="newSubject" type="text" maxlength="80" placeholder="Subject" />
-            <textarea id="newBody" maxlength="300" placeholder="Write message for players/parents..."></textarea>
+            <label for="newSubject">Subject</label>
+            <input id="newSubject" type="text" maxlength="80" placeholder="Subject" aria-label="Message subject" />
+            <label for="newBody">Message</label>
+            <textarea id="newBody" maxlength="300" placeholder="Write message for players/parents..." aria-label="Message body"></textarea>
             <button id="sendMessage" class="btn-primary" type="button">Send Message</button>
           </div>
         `;
@@ -675,10 +712,14 @@
       if (tab === 'Wellness Check-in') {
         return `${selector}
           <div class="composer">
-            <label>Sleep (hours)<input id="wSleep" type="number" min="4" max="12" value="${checkin.sleep}" /></label>
-            <label>Mood (1-5)<input id="wMood" type="number" min="1" max="5" value="${checkin.mood}" /></label>
-            <label>Soreness (1-5)<input id="wSoreness" type="number" min="1" max="5" value="${checkin.soreness}" /></label>
-            <label>Stress (1-5)<input id="wStress" type="number" min="1" max="5" value="${checkin.stress}" /></label>
+            <label for="wSleep">Sleep (hours)</label>
+            <input id="wSleep" type="number" min="4" max="12" value="${checkin.sleep}" />
+            <label for="wMood">Mood (1-5)</label>
+            <input id="wMood" type="number" min="1" max="5" value="${checkin.mood}" />
+            <label for="wSoreness">Soreness (1-5)</label>
+            <input id="wSoreness" type="number" min="1" max="5" value="${checkin.soreness}" />
+            <label for="wStress">Stress (1-5)</label>
+            <input id="wStress" type="number" min="1" max="5" value="${checkin.stress}" />
             <button id="saveCheckin" class="btn-primary" type="button">Save check-in</button>
           </div>
         `;
@@ -689,12 +730,12 @@
       }
 
       if (tab === 'Messages') {
-        return `${selector}
-          <div class="list">
-            ${state.messages.filter((m) => m.to === 'Players' || m.to === 'All').map((m) => `<article class="list-item"><strong>${esc(m.subject)}</strong><p>${esc(m.date)} • ${esc(m.from)}<br>${esc(m.body)}</p></article>`).join('')}
-          </div>
-        `;
-      }
+      return `${selector}
+        <div class="list">
+          ${orderedMessages().filter((m) => m.to === 'Players' || m.to === 'All').map((m) => `<article class="list-item"><strong>${esc(m.subject)}</strong><p>${esc(m.date)} • ${esc(m.from)}<br>${esc(m.body)}</p></article>`).join('')}
+        </div>
+      `;
+    }
 
       if (tab === 'Goals') {
         return `${selector}
@@ -741,7 +782,7 @@
 
       return `${selector}
         <div class="list">
-          ${state.messages.filter((m) => m.to === 'Parents' || m.to === 'All').map((m) => `<article class="list-item"><strong>${esc(m.subject)}</strong><p>${esc(m.date)} • ${esc(m.from)}<br>${esc(m.body)}</p></article>`).join('')}
+          ${orderedMessages().filter((m) => m.to === 'Parents' || m.to === 'All').map((m) => `<article class="list-item"><strong>${esc(m.subject)}</strong><p>${esc(m.date)} • ${esc(m.from)}<br>${esc(m.body)}</p></article>`).join('')}
         </div>
       `;
     }
@@ -836,7 +877,7 @@
           const body = document.getElementById('newBody').value.trim();
           if (!subject || !body) return;
           state.messages.unshift({
-            id: Date.now(),
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             from: 'Coach',
             to: 'Parents',
             subject: subject.slice(0, 80),
