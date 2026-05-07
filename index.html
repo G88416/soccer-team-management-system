@@ -365,6 +365,7 @@
       checkins: {},
       customNotes: []
     };
+    let localMessageCounter = state.messages.length;
 
     const readinessWeights = {
       sleep: 8,
@@ -511,6 +512,14 @@
       return state.players.find((p) => p.id === Number(state.selectedChildId)) || state.players[0];
     }
 
+    function generateMessageId() {
+      localMessageCounter += 1;
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      return `msg-${Date.now()}-${localMessageCounter}`;
+    }
+
     function orderedMessages() {
       return [...state.messages].sort((a, b) => {
         const byDate = String(b.date).localeCompare(String(a.date));
@@ -646,7 +655,7 @@
             <tbody>
               ${state.players.map((p) => `<tr>
                 <td>${esc(p.name)}</td>
-                <td>${p.attendanceHistory.map((value) => `${value}%`).join(', ')}</td>
+                <td>${p.attendanceHistory.map((value) => `<span class="tag">${value}%</span>`).join(' ')}</td>
                 <td>${attendanceOf(p)}%</td>
                 <td>${attendanceOf(p) < 85 ? '<span class="warn">Needs intervention</span>' : '<span class="ok">Stable</span>'}</td>
               </tr>`).join('')}
@@ -877,7 +886,7 @@
           const body = document.getElementById('newBody').value.trim();
           if (!subject || !body) return;
           state.messages.unshift({
-            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            id: generateMessageId(),
             from: 'Coach',
             to: 'Parents',
             subject: subject.slice(0, 80),
